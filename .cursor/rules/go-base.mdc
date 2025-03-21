@@ -1,0 +1,71 @@
+---
+description: 
+globs: *.go
+alwaysApply: false
+---
+
+# Your rule content
+
+单元测试使用库 github.com/stretchr/testify/assert
+
+错误包使用 github.com/pkg/errors
+
+
+当参数超过3个时,参考以下设计模式
+
+type Backoff struct {
+	attempt atomic.Uint64 
+	opts    *BackOffOptions
+}
+
+
+func NewBackoff(opts ...BackoffOption) *Backoff {
+	options := NewBackOffOptions()
+	for _, opt := range opts {
+		opt(options)
+	}
+	b := &Backoff{
+		opts: options,
+	}
+	return b
+}
+type BackOffOptions struct {
+	factor float64       // 指数因子
+	jitter bool          // 是否添加随机抖动
+	min    time.Duration // 最小退避时间
+	max    time.Duration // 最大退避时间
+}
+
+type BackoffOption func(b *BackOffOptions)
+
+func NewBackOffOptions() *BackOffOptions {
+	return &BackOffOptions{
+		factor: 2,
+		jitter: false,
+		min:    100 * time.Millisecond,
+		max:    10 * time.Second,
+	}
+}
+
+func WithFactor(factor float64) BackoffOption {
+	return func(b *BackOffOptions) {
+		b.factor = factor
+	}
+}
+func WithJitter(jitter bool) BackoffOption {
+	return func(b *BackOffOptions) {
+		b.jitter = jitter
+	}
+}
+
+func WithMin(min time.Duration) BackoffOption {
+	return func(b *BackOffOptions) {
+		b.min = min
+	}
+}
+
+func WithMax(max time.Duration) BackoffOption {
+	return func(b *BackOffOptions) {
+		b.max = max
+	}
+}
