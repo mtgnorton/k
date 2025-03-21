@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"k/kunique"
+	"github.com/mtgnorton/k/kunique"
 )
 
 // defaultTimeoutController 默认的超时检测器实例

@@ -1,9 +1,9 @@
 package kmap
 
 import (
-	"k/kalgo"
 	"sync"
 
+	"github.com/mtgnorton/k/kalgo"
 	"golang.org/x/exp/constraints"
 )
 

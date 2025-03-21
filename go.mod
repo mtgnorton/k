@@ -1,4 +1,4 @@
-module k
+module github.com/mtgnorton/k
 
 go 1.23.0
 

@@ -3,7 +3,7 @@ package kcollection
 import (
 	"time"
 
-	"k/kmath"
+	"github.com/mtgnorton/k/kmath"
 )
 
 type RollingWindowOptions[T kmath.Number, B BucketInterface[T]] struct {

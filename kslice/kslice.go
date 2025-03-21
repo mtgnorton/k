@@ -10,8 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"k/kmath"
-	"k/kreflect"
+	"github.com/mtgnorton/k/kmath"
+	"github.com/mtgnorton/k/kreflect"
 )
 
 type Result[T any, V any] struct {

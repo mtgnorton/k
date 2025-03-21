@@ -3,7 +3,7 @@ package kmap
 import (
 	"testing"
 
-	"k/kalgo"
+	"github.com/mtgnorton/k/kalgo"
 
 	"github.com/stretchr/testify/assert"
 )

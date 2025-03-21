@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"k/kmath"
+	"github.com/mtgnorton/k/kmath"
 )
 
 // RealtimeCounter 实时计数器,用于统计一段时间内的计数值

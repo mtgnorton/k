@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"k/kmath"
-	"k/ktime"
+	"github.com/mtgnorton/k/kmath"
+	"github.com/mtgnorton/k/ktime"
 )
 
 type (
