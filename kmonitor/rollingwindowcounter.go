@@ -85,7 +85,10 @@ func (r *RollingResultCounter[T]) Reduce(successFn func(successCount int64, succ
 // Info 获取计数器的详细信息
 // 返回:
 //   - string: 包含成功和失败请求的详细统计信息
-func (r *RollingResultCounter[T]) Info() string {
+func (r *RollingResultCounter[T]) Info(timeUnit ...string) string {
+	if len(timeUnit) == 0 {
+		timeUnit = []string{"ms"}
+	}
 	size := r.successWindow.Opts.Size
 	interval := r.successWindow.Opts.Interval
 	// size = 5  (5-1)*interval -> 5*interval
@@ -93,40 +96,49 @@ func (r *RollingResultCounter[T]) Info() string {
 	// size = 1  (1-1)*interval -> 1 *interval
 	temp := make([]struct {
 		successCount          int64
-		avgSuccessConsumeTime string
+		avgSuccessConsumeTime float64
 		failCount             int64
-		avgFailConsumeTime    string
+		avgFailConsumeTime    float64
 	}, size)
 
 	r.successWindow.Reduce(func(b *kcollection.Bucket[T]) {
-		d := "-"
+		d := 0.0
 		if b.Count > 0 {
-			d = fmt.Sprintf("%v", float64(b.Sum)/float64(b.Count))
+			d = float64(b.Sum) / float64(b.Count)
 		}
 		size--
 		temp[size] = struct {
 			successCount          int64
-			avgSuccessConsumeTime string
+			avgSuccessConsumeTime float64
 			failCount             int64
-			avgFailConsumeTime    string
+			avgFailConsumeTime    float64
 		}{
 			successCount:          b.Count,
-			avgSuccessConsumeTime: d,
+			avgSuccessConsumeTime: float64(d),
 		}
 	})
 	size = r.failWindow.Opts.Size
 	r.failWindow.Reduce(func(b *kcollection.Bucket[T]) {
 		size--
-		d := "-"
+		d := 0.0
 		if b.Count > 0 {
-			d = fmt.Sprintf("%v", float64(b.Sum)/float64(b.Count))
+			d = float64(b.Sum) / float64(b.Count)
 		}
 		temp[size].failCount = b.Count
 		temp[size].avgFailConsumeTime = d
 	})
 	var info string
+	totalSuccessCount := int64(0)
+	totalFailCount := int64(0)
+	totalSuccessConsumeTime := float64(0)
+	totalFailConsumeTime := float64(0)
 	for i := 0; i < len(temp); i++ {
-		info += fmt.Sprintf(" [time:%v-%v,successCount: %v, successAvgConsumeTime: %v,failCount: %v, failAvgConsumeTime: %v] ", time.Duration(i)*interval, time.Duration(i+1)*interval, temp[i].successCount, temp[i].avgSuccessConsumeTime, temp[i].failCount, temp[i].avgFailConsumeTime)
+		info += fmt.Sprintf(" [time:%v-%v,successCount: %v, successAvgConsumeTime: %v%s,failCount: %v, failAvgConsumeTime: %v%s] ", time.Duration(i)*interval, time.Duration(i+1)*interval, temp[i].successCount, temp[i].avgSuccessConsumeTime, timeUnit[0], temp[i].failCount, temp[i].avgFailConsumeTime, timeUnit[0])
+		totalSuccessCount += temp[i].successCount
+		totalFailCount += temp[i].failCount
+		totalSuccessConsumeTime += temp[i].avgSuccessConsumeTime
+		totalFailConsumeTime += temp[i].avgFailConsumeTime
 	}
+	info += fmt.Sprintf(" [totalSuccessCount: %v, totalSuccessConsumeTime: %v%s, totalFailCount: %v, totalFailConsumeTime: %v%s] ", totalSuccessCount, totalSuccessConsumeTime, timeUnit[0], totalFailCount, totalFailConsumeTime, timeUnit[0])
 	return info
 }

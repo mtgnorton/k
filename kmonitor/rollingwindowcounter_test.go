@@ -41,7 +41,7 @@ func TestNewRollingResultCounter(t *testing.T) {
 			failTime = ft
 		},
 	)
-	info := counter.Info()
+	info := counter.Info("ms")
 	fmt.Println(info)
 	assert.Equal(t, int64(1), successCount)
 	assert.Equal(t, int64(100), successTime)
