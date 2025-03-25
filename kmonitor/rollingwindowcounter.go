@@ -86,7 +86,6 @@ func (r *RollingResultCounter[T]) Reduce(successFn func(successCount int64, succ
 // 返回:
 //   - string: 包含成功和失败请求的详细统计信息
 func (r *RollingResultCounter[T]) Info() string {
-	info := "successInfo:\n"
 	size := r.successWindow.Opts.Size
 	interval := r.successWindow.Opts.Interval
 	// size = 5  (5-1)*interval -> 5*interval
@@ -125,9 +124,9 @@ func (r *RollingResultCounter[T]) Info() string {
 		temp[size].failCount = b.Count
 		temp[size].avgFailConsumeTime = d
 	})
-
+	var info string
 	for i := 0; i < len(temp); i++ {
-		info += fmt.Sprintf(" time:%v-%v,successCount: %v, successAvgConsumeTime: %v,failCount: %v, failAvgConsumeTime: %v\n", time.Duration(i)*interval, time.Duration(i+1)*interval, temp[i].successCount, temp[i].avgSuccessConsumeTime, temp[i].failCount, temp[i].avgFailConsumeTime)
+		info += fmt.Sprintf(" [time:%v-%v,successCount: %v, successAvgConsumeTime: %v,failCount: %v, failAvgConsumeTime: %v] ", time.Duration(i)*interval, time.Duration(i+1)*interval, temp[i].successCount, temp[i].avgSuccessConsumeTime, temp[i].failCount, temp[i].avgFailConsumeTime)
 	}
 	return info
 }
