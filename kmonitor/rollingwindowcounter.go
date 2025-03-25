@@ -130,15 +130,15 @@ func (r *RollingResultCounter[T]) Info(timeUnit ...string) string {
 	var info string
 	totalSuccessCount := int64(0)
 	totalFailCount := int64(0)
-	totalSuccessConsumeTime := float64(0)
-	totalFailConsumeTime := float64(0)
+	totalSuccessAvgConsumeTime := float64(0)
+	totalFailAvgConsumeTime := float64(0)
 	for i := 0; i < len(temp); i++ {
 		info += fmt.Sprintf(" [time:%v-%v,successCount: %v, successAvgConsumeTime: %v%s,failCount: %v, failAvgConsumeTime: %v%s] ", time.Duration(i)*interval, time.Duration(i+1)*interval, temp[i].successCount, temp[i].avgSuccessConsumeTime, timeUnit[0], temp[i].failCount, temp[i].avgFailConsumeTime, timeUnit[0])
 		totalSuccessCount += temp[i].successCount
 		totalFailCount += temp[i].failCount
-		totalSuccessConsumeTime += temp[i].avgSuccessConsumeTime
-		totalFailConsumeTime += temp[i].avgFailConsumeTime
+		totalSuccessAvgConsumeTime += temp[i].avgSuccessConsumeTime
+		totalFailAvgConsumeTime += temp[i].avgFailConsumeTime
 	}
-	info += fmt.Sprintf(" [totalSuccessCount: %v, totalSuccessConsumeTime: %v%s, totalFailCount: %v, totalFailConsumeTime: %v%s] ", totalSuccessCount, totalSuccessConsumeTime, timeUnit[0], totalFailCount, totalFailConsumeTime, timeUnit[0])
+	info += fmt.Sprintf(" [totalSuccessCount: %v, totalSuccessAvgConsumeTime: %v%s, totalFailCount: %v, totalFailAvgConsumeTime: %v%s] ", totalSuccessCount, totalSuccessAvgConsumeTime, timeUnit[0], totalFailCount, totalFailAvgConsumeTime, timeUnit[0])
 	return info
 }
