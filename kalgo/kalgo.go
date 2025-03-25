@@ -1,7 +1,11 @@
 // Package kalgo 提供一些常用的算法实现
 package kalgo
 
-import "golang.org/x/exp/constraints"
+import (
+	"math/rand"
+
+	"golang.org/x/exp/constraints"
+)
 
 const (
 	SortAsc  Sort = "asc"
@@ -49,6 +53,8 @@ func partition[T constraints.Ordered](arr []T, l, r int, sort Sort) int {
 		i = l
 		j = l
 	)
+	randomIndex := l + rand.Intn(r-l+1)
+	arr[r], arr[randomIndex] = arr[randomIndex], arr[r]
 	for ; j < r; j++ {
 		if sort == SortAsc {
 			if arr[j] <= arr[r] {

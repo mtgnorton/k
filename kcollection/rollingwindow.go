@@ -43,7 +43,7 @@ type (
 		win      *window[T, B]
 		lastTime time.Duration
 		offset   int // 当前桶的位置
-		opts     *RollingWindowOptions[T, B]
+		Opts     *RollingWindowOptions[T, B]
 	}
 )
 
@@ -69,13 +69,13 @@ func NewRollingWindow[T kmath.Number, B BucketInterface[T]](newBucket func() B, 
 	for _, opt := range opts {
 		opt(options)
 	}
-	if options.size < 1 {
+	if options.Size < 1 {
 		panic("size must be greater than 0")
 	}
 	w := &RollingWindow[T, B]{
-		win:      newWindow(newBucket, options.size),
+		win:      newWindow(newBucket, options.Size),
 		lastTime: ktime.Now(),
-		opts:     options,
+		Opts:     options,
 	}
 	return w
 }
@@ -104,13 +104,13 @@ func (rw *RollingWindow[T, B]) Reduce(fn func(b B)) {
 	var diff int
 	span := rw.span()
 
-	if span == 0 && rw.opts.ignoreCurrent {
-		diff = rw.opts.size - 1
+	if span == 0 && rw.Opts.IgnoreCurrent {
+		diff = rw.Opts.Size - 1
 	} else {
-		diff = rw.opts.size - span
+		diff = rw.Opts.Size - span
 	}
 	if diff > 0 {
-		offset := (rw.offset + span + 1) % rw.opts.size
+		offset := (rw.offset + span + 1) % rw.Opts.Size
 		rw.win.reduce(offset, diff, fn)
 	}
 }
@@ -126,10 +126,10 @@ func (rw *RollingWindow[T, B]) GetLastValidBucket() (B, bool) {
 	span := rw.span()
 	var diff int
 
-	if span == 0 && rw.opts.ignoreCurrent {
-		diff = rw.opts.size - 1
+	if span == 0 && rw.Opts.IgnoreCurrent {
+		diff = rw.Opts.Size - 1
 	} else {
-		diff = rw.opts.size - span
+		diff = rw.Opts.Size - span
 	}
 
 	if diff <= 0 {
@@ -137,8 +137,8 @@ func (rw *RollingWindow[T, B]) GetLastValidBucket() (B, bool) {
 		return zero, false // 无有效桶
 	}
 	// 计算最后一个有效桶的位置
-	offset := (rw.offset + span + 1) % rw.opts.size
-	lastPos := (offset + diff - 1) % rw.opts.size
+	offset := (rw.offset + span + 1) % rw.Opts.Size
+	lastPos := (offset + diff - 1) % rw.Opts.Size
 	return rw.win.buckets[lastPos], true
 }
 
@@ -146,12 +146,12 @@ func (rw *RollingWindow[T, B]) GetLastValidBucket() (B, bool) {
 // 返回:
 //   - int: 经过的时间间隔数
 func (rw *RollingWindow[T, B]) span() int {
-	offset := int(ktime.Since(rw.lastTime) / rw.opts.interval)
-	if 0 <= offset && offset < rw.opts.size {
+	offset := int(ktime.Since(rw.lastTime) / rw.Opts.Interval)
+	if 0 <= offset && offset < rw.Opts.Size {
 		return offset
 	}
 
-	return rw.opts.size
+	return rw.Opts.Size
 }
 
 // updateOffset 更新窗口的偏移量
@@ -164,13 +164,13 @@ func (rw *RollingWindow[T, B]) updateOffset() {
 	offset := rw.offset
 
 	for i := 0; i < span; i++ {
-		rw.win.resetBucket((offset + i + 1) % rw.opts.size)
+		rw.win.resetBucket((offset + i + 1) % rw.Opts.Size)
 	}
 
-	rw.offset = (offset + span) % rw.opts.size
+	rw.offset = (offset + span) % rw.Opts.Size
 	now := ktime.Now()
 
-	rw.lastTime = now - (now-rw.lastTime)%rw.opts.interval
+	rw.lastTime = now - (now-rw.lastTime)%rw.Opts.Interval
 }
 
 // Bucket 实现了BucketInterface接口的基础桶类型
