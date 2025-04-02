@@ -1,34 +1,81 @@
 package ktime
 
-import "time"
+import (
+	"fmt"
+	"time"
 
-// initTime 是系统启动时间, 用于计算相对时间,使相对时间的计算不依赖系统时间,避免出现时间差为0或负数
-// 解决以下3个问题
-// 1. 系统时间被重置的问题
-// 2. 避免高频调用下时间差为零的问题
-// 3. 依赖单调时钟（Monotonic Clock）
-//
-// go中的单调时钟
-//
-//	time.Now() 返回的值是单调时钟,所以initTime 包含单调时钟
-//	当调用 time.Since(t) 时：
-//	如果 t 包含单调时钟读数（即通过 time.Now() 获取的时间），则优先使用单调时钟计算时间差。
-//	如果 t 不包含单调时钟（例如通过 time.Parse 解析的时间），则使用系统时钟计算时间差。
-//
-// 高频调用 Now()：
-//
-//	t1 := ktime.Now() // 返回 time.Since(initTime) 的差值（例如 1年1个月 + 1ms）
-//	t2 := ktime.Now() // 返回 1年1个月 + 2ms
-//
-// 即使两次调用发生在同一系统时间点（例如系统时钟未更新），单调时钟仍会确保 t2 > t1。
-var initTime = time.Now().AddDate(-1, -1, -1)
+	"github.com/pkg/errors"
+)
 
-// Now 返回相对于系统启动时间的时间
-func Now() time.Duration {
-	return time.Since(initTime)
+var (
+	ErrInvalidZoneFormat = errors.New("invalid zone format")
+)
+
+const (
+	DefaultZone       = "UTC+8"
+	DefaultZoneOffset = 8 * 60 * 60
+)
+
+// ConvertToZoneTimeStr 将时间戳转换为指定时区和格式的时间字符串
+// 参数:
+//   - timestamp: Unix时间戳（秒）
+//   - format: 时间格式化模板，如 "2006-01-02 15:04:05"
+//   - zone: 可选的时区参数，支持标准时区名称（如"UTC"）或小时偏移（如"+8"、"-5"）
+//
+// 返回值:
+//   - string: 格式化后的时间字符串
+//   - error: 如果提供了无效的时区格式，返回 ErrInvalidZoneFormat 错误
+//
+// 注意事项:
+//   - 如果不提供时区参数，默认使用 UTC+8
+//   - 时区参数可以是标准时区名称或小时偏移格式
+//
+// 示例:
+//
+//	str, err := ConvertToZoneTimeStr(1684154445, "2006-01-02 15:04:05", "+8")
+//	// 返回: "2023-05-15 20:40:45", nil
+func ConvertToZoneTimeStr(timestamp int64, format string, zone ...string) (string, error) {
+	// 将时间戳转换为 time.Time 对象
+	t := time.Unix(timestamp, 0)
+
+	// 解析时区
+	var location *time.Location
+	if len(zone) == 0 {
+		// 默认使用 UTC+8
+		location = time.FixedZone(DefaultZone, DefaultZoneOffset)
+	} else {
+		zoneStr := zone[0]
+		// 尝试解析标准时区
+		loc, err := time.LoadLocation(zoneStr)
+		if err != nil {
+			// 如果不是标准时区，尝试解析为小时偏移
+			// 例如 "+8" 或 "-5"
+			var offset int
+			_, err := fmt.Sscanf(zoneStr, "%d", &offset)
+			if err == nil {
+				location = time.FixedZone(fmt.Sprintf("UTC%+d", offset), offset*60*60)
+			} else {
+				// 解析失败，返回错误
+				return "", ErrInvalidZoneFormat
+			}
+		} else {
+			location = loc
+		}
+	}
+
+	// 将时间转换为指定时区
+	tInZone := t.In(location)
+
+	// 格式化时间字符串并返回
+	return tInZone.Format(format), nil
 }
 
-// Since 返回相对于系统启动时间的时间减去d
-func Since(d time.Duration) time.Duration {
-	return time.Since(initTime) - d
+// MustConvertToZoneTimeStr 将时间戳转换为指定时区和格式的时间字符串，如果转换失败，会 panic,
+// 参考 ConvertToZoneTimeStr
+func MustConvertToZoneTimeStr(timestamp int64, format string, zone ...string) string {
+	str, err := ConvertToZoneTimeStr(timestamp, format, zone...)
+	if err != nil {
+		panic(err)
+	}
+	return str
 }
